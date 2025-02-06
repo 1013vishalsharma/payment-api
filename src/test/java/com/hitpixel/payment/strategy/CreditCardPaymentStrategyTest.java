@@ -1,0 +1,69 @@
+package com.hitpixel.payment.strategy;
+
+import com.hitpixel.payment.domain.Transaction;
+import com.hitpixel.payment.dto.Payment;
+import com.hitpixel.payment.enums.Currency;
+import com.hitpixel.payment.enums.PaymentMethod;
+import com.hitpixel.payment.enums.PaymentStatus;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+class CreditCardPaymentStrategyTest {
+
+    private CreditCardPaymentStrategy creditCardPaymentStrategy;
+
+    @BeforeEach
+    void setUp() {
+        creditCardPaymentStrategy = new CreditCardPaymentStrategy();
+    }
+
+    @Test
+    void testGetPaymentMethod() {
+        PaymentMethod paymentMethod = creditCardPaymentStrategy.getPaymentMethod();
+
+        assertEquals(PaymentMethod.CREDIT_CARD, paymentMethod);
+    }
+
+    @Test
+    void testProcessPayment() {
+        Payment payment = mock(Payment.class);
+        when(payment.paymentAmount()).thenReturn(BigDecimal.valueOf(100.00));
+        when(payment.paymentMethod()).thenReturn(PaymentMethod.CREDIT_CARD);
+        when(payment.currency()).thenReturn(Currency.valueOf("USD"));
+
+        Transaction transaction = creditCardPaymentStrategy.processPayment(payment);
+
+        assertNotNull(transaction);
+        assertNotNull(transaction.getId());
+        assertEquals(BigDecimal.valueOf(100.00), transaction.getAmount());
+        assertEquals(PaymentMethod.CREDIT_CARD, transaction.getPaymentMethod());
+        assertEquals(Currency.valueOf("USD"), transaction.getCurrency());
+        assertEquals(PaymentStatus.SUCCESS, transaction.getStatus());
+        assertNotNull(transaction.getTransactionTimestamp());
+    }
+
+    @Test
+    void testTransactionIdGeneration() {
+        Payment payment = mock(Payment.class);
+        when(payment.paymentAmount()).thenReturn(BigDecimal.valueOf(100.00));
+        when(payment.paymentMethod()).thenReturn(PaymentMethod.CREDIT_CARD);
+        when(payment.currency()).thenReturn(Currency.valueOf("USD"));
+
+        Transaction transaction1 = creditCardPaymentStrategy.processPayment(payment);
+        Transaction transaction2 = creditCardPaymentStrategy.processPayment(payment);
+
+        assertNotEquals(transaction1.getId(), transaction2.getId());
+    }
+
+    @Test
+    void testProcessPaymentWithNullPayment() {
+        assertThrows(NullPointerException.class, () -> creditCardPaymentStrategy.processPayment(null),
+                "Should throw NullPointerException when payment is null");
+    }
+}
